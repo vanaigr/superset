@@ -101,7 +101,7 @@ export const columnsUnsorted = [
   {
     column_name: 'ccc',
     description: null,
-    expression: 'null',
+    expression: null,
     filterable: true,
     groupby: true,
     id: 100,
@@ -197,7 +197,6 @@ const metricsFilteredUnsorted = {
       uuid: '59',
       is_certified: true,
       metric_name: 'ee (certified)',
-      verbose_name: null,
       warning_text: null,
     },
   ],
@@ -211,7 +210,6 @@ const metricsFilteredUnsorted = {
       uuid: '56',
       is_certified: false,
       metric_name: 'dd',
-      verbose_name: null,
       warning_text: null,
     },
     {
@@ -247,7 +245,6 @@ const metricsFilteredUnsorted = {
       uuid: '58',
       is_certified: false,
       metric_name: 'bb',
-      verbose_name: null,
       warning_text: null,
     },
   ],
