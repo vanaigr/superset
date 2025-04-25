@@ -24,6 +24,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { createSelector } from '@reduxjs/toolkit';
 import { useToasts } from 'src/components/MessageToasts/withToasts';
 import Loading from 'src/components/Loading';
+import rison from 'rison'
 import {
   useDashboard,
   useDashboardCharts,
@@ -163,6 +164,9 @@ export const DashboardPage: FC<PageProps> = ({ idOrSlug }: PageProps) => {
       const nativeFilterKeyValue = getUrlParam(URL_PARAMS.nativeFiltersKey);
       const isOldRison = getUrlParam(URL_PARAMS.nativeFilters);
 
+      const urlParam = new URLSearchParams(window.location.search).get('filters')
+      const shortFilters = urlParam && rison.decode_array(urlParam) || null
+
       let dataMask = nativeFilterKeyValue || {};
       // activeTabs is initialized with undefined so that it doesn't override
       // the currently stored value when hydrating
@@ -178,6 +182,50 @@ export const DashboardPage: FC<PageProps> = ({ idOrSlug }: PageProps) => {
       if (isOldRison) {
         dataMask = isOldRison;
       }
+      if (shortFilters) {
+        const d = dashboard!
+        const m = d.metadata
+        if(Array.isArray(shortFilters)) {
+          if(shortFilters[0] === 1) {
+            const srcFilters = shortFilters[1] as Record<string, any[]>
+
+            const filtersDesc = m.native_filter_configuration
+            const nameToFilter = {} as Record<string, any>
+            for(let i = 0; i < filtersDesc.length; i++) {
+              const desc = filtersDesc[i]
+              nameToFilter[desc.name] = desc
+            }
+
+            for(const name in srcFilters) {
+              const srcF = srcFilters[name]
+              const fDesc = nameToFilter[name]
+              if(!fDesc) continue
+
+              dataMask[fDesc.id] = {
+                cascadeParentIds: JSON.parse(JSON.stringify(fDesc.cascadeParentIds)),
+                controlValues: JSON.parse(JSON.stringify(fDesc.controlValues)),
+                defaultDataMask: JSON.parse(JSON.stringify(fDesc.defaultDataMask)),
+                description: JSON.parse(JSON.stringify(fDesc.description)),
+                extraFormData: JSON.parse(JSON.stringify(fDesc.defaultDataMask.extraFormData)),
+                filterState: {
+                  ...JSON.parse(JSON.stringify(fDesc.defaultDataMask.filterState)),
+                  value: srcF,
+                },
+                filterType: fDesc.filterType,
+                id: fDesc.id,
+                name: fDesc.name,
+                ownState: JSON.parse(JSON.stringify(fDesc.defaultDataMask.ownState)),
+                scope: JSON.parse(JSON.stringify(fDesc.scope)),
+                targets: JSON.parse(JSON.stringify(fDesc.targets)),
+                type: JSON.parse(JSON.stringify(fDesc.type)),
+              }
+            }
+          }
+        }
+      }
+      console.log('actual data mask', dataMask)
+      console.log('metadata', dashboard!.metadata)
+
 
       if (readyToRender) {
         if (!isDashboardHydrated.current) {

@@ -21,6 +21,8 @@ import { Dashboard, Datasource, EmbeddedDashboard } from 'src/dashboard/types';
 import { Chart } from 'src/types/Chart';
 import { useApiV1Resource, useTransformedResource } from './apiResources';
 
+export type ParsedDashboard = Dashboard & { metadata: any, position_data: any, owners: any }
+
 export const useDashboard = (idOrSlug: string | number) =>
   useTransformedResource(
     useApiV1Resource<Dashboard>(`/api/v1/dashboard/${idOrSlug}`),
@@ -32,7 +34,7 @@ export const useDashboard = (idOrSlug: string | number) =>
       position_data:
         dashboard.position_json && JSON.parse(dashboard.position_json),
       owners: dashboard.owners || [],
-    }),
+    }) satisfies ParsedDashboard,
   );
 
 // gets the chart definitions for a dashboard

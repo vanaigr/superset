@@ -47,6 +47,10 @@ export const URL_PARAMS = {
     name: 'native_filters',
     type: 'rison',
   },
+  shortFilters: {
+    name: 'shortFilters',
+    type: 'rison',
+  },
   nativeFiltersKey: {
     name: 'native_filters_key',
     type: 'string',

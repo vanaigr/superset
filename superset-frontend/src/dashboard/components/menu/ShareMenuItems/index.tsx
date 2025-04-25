@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import type { DashboardInfo } from 'src/dashboard/components/Header/types'
 import { ComponentProps, RefObject } from 'react';
 import copyTextToClipboard from 'src/utils/copy';
 import { t, logging } from '@superset-ui/core';
@@ -23,6 +24,7 @@ import { Menu } from 'src/components/Menu';
 import { getDashboardPermalink } from 'src/utils/urlUtils';
 import { MenuKeys, RootState } from 'src/dashboard/types';
 import { shallowEqual, useSelector } from 'react-redux';
+import rison from 'rison'
 
 interface ShareMenuItemProps extends ComponentProps<typeof Menu.SubMenu> {
   url?: string;
@@ -38,6 +40,7 @@ interface ShareMenuItemProps extends ComponentProps<typeof Menu.SubMenu> {
   shareByEmailMenuItemRef?: RefObject<any>;
   selectedKeys?: string[];
   setOpenKeys?: Function;
+  dashboardInfo: DashboardInfo,
   title: string;
   disabled?: boolean;
 }
@@ -54,6 +57,7 @@ const ShareMenuItems = (props: ShareMenuItemProps) => {
     dashboardComponentId,
     title,
     disabled,
+    dashboardInfo,
     ...rest
   } = props;
   const { dataMask, activeTabs } = useSelector(
@@ -76,6 +80,61 @@ const ShareMenuItems = (props: ShareMenuItemProps) => {
   async function onCopyLink() {
     try {
       await copyTextToClipboard(generateUrl);
+      addSuccessToast(t('Copied to clipboard!'));
+    } catch (error) {
+      logging.error(error);
+      addDangerToast(t('Sorry, something went wrong. Try again later.'));
+    }
+  }
+
+  async function onCopyLongLink() {
+    try {
+      await copyTextToClipboard(() => {
+        const url = new URL(window.location)
+        url.searchParams.delete('native_filters_key')
+
+        let resultDataMask = {}
+        for(const k in dataMask) {
+          if(k.startsWith('NATIVE_FILTER')) resultDataMask[k] = dataMask[k]
+        }
+        resultDataMask = JSON.parse(JSON.stringify(resultDataMask))
+        console.log('result is', resultDataMask)
+
+        url.searchParams.append('native_filters', rison.encode(resultDataMask))
+        return url.toString()
+      });
+      addSuccessToast(t('Copied to clipboard!'));
+    } catch (error) {
+      logging.error(error);
+      addDangerToast(t('Sorry, something went wrong. Try again later.'));
+    }
+  }
+
+  async function onCopyHumanReadableLink() {
+    try {
+      await copyTextToClipboard(() => {
+        const url = new URL(window.location)
+        url.searchParams.delete('native_filters_key')
+        console.log(dashboardInfo)
+        const filtersDesc = JSON.parse(dashboardInfo.json_metadata).native_filter_configuration
+        console.log(filtersDesc)
+
+        let resFilters = {}
+
+        for(let i = 0; i < filtersDesc.length; i++) {
+          const fDesc = filtersDesc[i]
+          const filter = dataMask[fDesc.id as string]
+          if(filter) {
+            resFilters[fDesc.name] = filter.filterState?.value
+          }
+        }
+
+        resFilters = JSON.parse(JSON.stringify(resFilters))
+        console.log('result is', resFilters)
+
+        url.searchParams.append('filters', rison.encode_array([1, resFilters]))
+        return url.toString()
+      });
       addSuccessToast(t('Copied to clipboard!'));
     } catch (error) {
       logging.error(error);
@@ -108,6 +167,12 @@ const ShareMenuItems = (props: ShareMenuItemProps) => {
       </Menu.Item>
       <Menu.Item key={MenuKeys.ShareByEmail} onClick={() => onShareByEmail()}>
         {emailMenuItemTitle}
+      </Menu.Item>
+      <Menu.Item key={'copy_long_link'} onClick={() => onCopyLongLink()}>
+        Copy long permalink to clipboard
+      </Menu.Item>
+      <Menu.Item key={'copy_human_link'} onClick={() => onCopyHumanReadableLink()}>
+        Copy human readable link to clipboard
       </Menu.Item>
     </Menu.SubMenu>
   );

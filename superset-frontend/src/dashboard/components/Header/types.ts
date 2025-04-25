@@ -21,7 +21,7 @@ import { Layout } from 'src/dashboard/types';
 import { ChartState } from 'src/explore/types';
 import { AlertObject } from 'src/features/alerts/types';
 
-interface DashboardInfo {
+export interface DashboardInfo {
   id: number;
   userId: string | undefined;
   dash_edit_perm: boolean;
